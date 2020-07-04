@@ -1,6 +1,7 @@
 import Control.Exception
 import Data.Char
 import Data.List
+import Data.Function
 
 
 main :: IO ()
@@ -19,20 +20,31 @@ main = do {
            }
 
 
-validarArchivo :: String -> IO ([Char]) 
+validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = lines str
-                        --let archivo = map (filter.isSpace) archivo
-                        if check archivo
-                        then return (concat archivo)
-                        else error "Error de validacion en: Validar Archivo"
+                        let archivo2 = (map separarEnNodos archivo)
+                        if check archivo2
+                        then return archivo2
+                        else error "Error de validacion!"
 
 validarLinea :: String -> Bool
 validarLinea [] = True
 validarLinea (c:cs) = if isAlphaNum c then validarLinea cs else False
 
-check :: [String] -> Bool
-check archivo = (all (==True) (map validarLinea archivo))
+isOtherPunctuation :: Char -> Bool
+isOtherPunctuation c = (generalCategory c) == OtherPunctuation
+
+isDashPunctuation :: Char -> Bool
+isDashPunctuation c = (generalCategory c) == DashPunctuation 
+
+separarEnNodos :: String -> [String]
+separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
+
+check :: [[String]] -> Bool
+check archivo = all (==True) (concat (map (\linea -> concat (map (\str -> zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)) linea)) archivo))
+
+
 
 obtenerRutaSalida :: IO String
 obtenerRutaSalida = do{

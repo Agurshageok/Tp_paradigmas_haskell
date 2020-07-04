@@ -8,6 +8,7 @@ Trabajo Práctico 1a: Totalizador
 
 Un ejemplo de contenido de varias filas en el archivo puede ser el siguiente:
 
+'''
 1,2,1,A-7
 1,2,1,B-2
 1,2,1,C-3
@@ -29,6 +30,7 @@ A,4,1,1,H-3
 A,4,1,2,M-1
 A,4,1,2,N-9
 A,4,3,1-2
+'''
 
 luego se procederá a visualizar la información ingresada, pero estructurada jerárquicamente. Se deberá visualizar por niveles, indicando al fin de cada nivel la suma de todos los valores adicionales contenidos.
 La forma de generar el resultado como salida deberá ser de la siguiente forma (en función de los datos ingresados antes):

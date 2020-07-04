@@ -19,19 +19,20 @@ main = do {
            }
 
 
-validarArchivo :: String -> IO ([String]) 
+validarArchivo :: String -> IO ([Char]) 
 validarArchivo str = do
                         let archivo = lines str
                         --let archivo = map (filter.isSpace) archivo
-                        if (all (==True) (map validarLinea archivo))
-                        then return archivo
+                        if check archivo
+                        then return (concat archivo)
                         else error "Error de validacion en: Validar Archivo"
 
 validarLinea :: String -> Bool
 validarLinea [] = True
 validarLinea (c:cs) = if isAlphaNum c then validarLinea cs else False
 
-
+check :: [String] -> Bool
+check archivo = (all (==True) (map validarLinea archivo))
 
 obtenerRutaSalida :: IO String
 obtenerRutaSalida = do{

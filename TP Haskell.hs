@@ -86,6 +86,22 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
+--ASUMIENDO QUE ES VALIDO EL ARBOL
+strToArbol :: [Char] -> [Char] -> ArbN Char
+strToArbol (x:(z:(w:[]))) ys = if z == '-' then (Nodo x [] (digitToInt w)) else error "Error en string de entrada"
+strToArbol (x:(z:xs)) ys = if x == ',' then strToArbol xs ys --[',','2']
+                                else 
+                                     if z /= '-' then (Nodo x ([(strToArbol (z:xs) (x:ys))]) 0) -- ['1','2',..]
+                                     else Nodo x [compararRamas (tail xs) (reverse(head xs:ys))] (digitToInt (head xs))
+
+
+compararRamas :: [Char] -> [Char] -> ArbN Char 
+compararRamas (x:xs) (y:ys) = if x == ',' then 
+                                        if head xs == y then compararRamas xs ys else strToArbol (x:xs) (y:ys) 
+                                else 
+                                        if x == y then compararRamas xs ys else strToArbol (x:xs) (y:ys)
+                                        
+--strToArbol ['1','2','1','A','-','3','1','2','1','2','A','-','2'] []
 
 obtenerTotalNodo :: ArbN a -> Int
 obtenerTotalNodo (Nodo e hs x) = if null hs then x else sum(map obtenerTotalNodo hs)

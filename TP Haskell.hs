@@ -22,10 +22,9 @@ main = do {
 
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
-                        let archivo = lines str
-                        let archivo2 = (map separarEnNodos archivo)
-                        if check archivo2
-                        then return archivo2
+                        let archivo = map separarEnNodos (lines str)
+                        if check archivo
+                        then return archivo
                         else error "Error de validacion!"
 
 validarLinea :: String -> Bool
@@ -42,8 +41,13 @@ separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
 
 check :: [[String]] -> Bool
-check archivo = all (==True) (concat (map (\linea -> concat (map (\str -> zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)) linea)) archivo))
+check archivo = all (==True) (concat (map checkLine archivo))
 
+checkLine :: [String] -> [Bool]
+checkLine line = concat (map checkString line)
+
+checkString :: String -> [Bool]
+checkString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
 
 
 obtenerRutaSalida :: IO String

@@ -1,5 +1,6 @@
 import Control.Exception
 import Data.Char
+import Data.List
 
 
 main :: IO ()
@@ -21,13 +22,14 @@ main = do {
 validarArchivo :: String -> IO ([String]) 
 validarArchivo str = do
                         let archivo = lines str
+                        --let archivo = map (filter.isSpace) archivo
                         if (all (==True) (map validarLinea archivo))
                         then return archivo
                         else error "Error de validacion en: Validar Archivo"
 
 validarLinea :: String -> Bool
 validarLinea [] = True
-validarLinea (c:cs) = if comprobar c dad  then validarLinea cs else False where d = head cs
+validarLinea (c:cs) = if isAlphaNum c then validarLinea cs else False
 
 
 

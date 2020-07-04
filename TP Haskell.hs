@@ -5,8 +5,7 @@ import Data.Char
 main :: IO ()
 main = do { 
            str <- leerArchivoEntrada;
-           putStrLn str;
-
+           listoParaArbol <- validarArchivo str;
            esp <- ingresarCantEspacios;
            putStrLn ((show esp) ++ "   espacios");
 
@@ -16,7 +15,20 @@ main = do {
            if continuar
            then main
            else putStrLn "Fin del procesamiento."
-          }
+           }
+
+
+validarArchivo :: String -> IO ([String]) 
+validarArchivo str = do
+                        let archivo = lines str
+                        if (all (==True) (map validarLinea archivo))
+                        then return archivo
+                        else error "Error de validacion en: Validar Archivo"
+
+validarLinea :: String -> Bool
+validarLinea [] = True
+validarLinea (c:cs) = if comprobar c dad  then validarLinea cs else False where d = head cs
+
 
 
 obtenerRutaSalida :: IO String
@@ -38,7 +50,7 @@ leerArchivoEntrada :: IO String
 leerArchivoEntrada = do{
                         putStrLn "Ingresar la ruta del archivo de entrada.";
                         path <- getLine;
-                        str <- catch (readFile path) manejarErrorArchivo;
+                        str <- catch ((readFile) path) manejarErrorArchivo;
                         return str
                        }
 

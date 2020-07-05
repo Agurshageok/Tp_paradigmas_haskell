@@ -36,9 +36,9 @@ Revisar que el dash solo aparezca en el ultimo elemento
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
-                        if check archivo && checkDash archivo
+                        if checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && (checkFilasNoRepetidos $ filasConcat archivo) -- && checkOrder archivo
                         then return archivo
-                        else error "Error de validacion!"
+                        else error "Error de validacion!" --Cambiar por exception
 
 isOtherPunctuation :: Char -> Bool
 isOtherPunctuation c = (generalCategory c) == OtherPunctuation
@@ -49,6 +49,31 @@ isDashPunctuation c = (generalCategory c) == DashPunctuation
 separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
 
+{-
+checkOrder :: [[String]] -> Bool
+checkOrder archivo = all (==True) (map checkDashLine archivo)
+
+checkOrderLine :: [String] -> Bool
+checkOrderLine line = True
+
+checkOrderString :: String -> Bool
+checkOrderString str = True
+-}
+
+checkValueIsInt :: [[String]] -> Bool
+checkValueIsInt archivo = all (==True) (map checkValueIsIntLine archivo)
+
+checkValueIsIntLine :: [String] -> Bool
+checkValueIsIntLine line = checkValueIsIntString $ last line
+
+checkValueIsIntString :: String -> Bool
+checkValueIsIntString str = length (words num) >= 1 && (all isDigit num) && (read num ::Int) >= 0 where num = (drop 2 str)
+
+--validarCantEspacios comprueba que un string contiene un INT mayor o igual a 0. 
+--validarCantEspacios esp = length (words esp) == 1 && (all isDigit esp) && (read esp ::Int) > 0
+--Usar de template, pero descartar lenght. Podria venir un int de >9
+--(drop 2 "A-13")
+
 checkDash :: [[String]] -> Bool
 checkDash archivo = all (==True) (map checkDashLine archivo)
 
@@ -58,19 +83,27 @@ checkDashLine line =  checkDashString $ last line
 checkDashString :: String -> Bool
 checkDashString str = isDashPunctuation $ str !! 1
 
-check :: [[String]] -> Bool
-check archivo = all (==True) (concat (map checkLine archivo))
+checkCharacters :: [[String]] -> Bool
+checkCharacters archivo = all (==True) (concat (map checkCharactersLine archivo))
 
-checkLine :: [String] -> [Bool]
-checkLine line = concat (map checkString line)
+checkCharactersLine :: [String] -> [Bool]
+checkCharactersLine line = concat (map checkCharactersString line)
 
-checkString :: String -> [Bool]
-checkString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
+checkCharactersString :: String -> [Bool]
+checkCharactersString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
 
 isSorted :: (Ord a) => [a] -> Bool
 isSorted []       = True
 isSorted [x]      = True
-isSorted (x:y:xs) = x < y && isSorted (y:xs)
+isSorted (x:y:xs) = x <= y && isSorted (y:xs)
+
+filasConcat :: [[String]] -> [String]
+--filasConcat archivo = map (\str -> takeWhile (/= '-') (concat str)) archivo
+filasConcat archivo = map concat archivo
+
+checkFilasNoRepetidos :: [String] -> Bool
+checkFilasNoRepetidos lines = length lines == length (nub lines)
+        --(isSorted $ map head filas) && (checkFilasOrden (map tail filas))
 
 {-
 -----------------------------------------------------------------------------------
@@ -95,18 +128,30 @@ manejarRutaInvalida e = do{
                           }
 
 
-leerArchivoEntrada :: IO String
+leerArchivoEntrada :: IO [[String]]
 leerArchivoEntrada = do{
                         putStrLn "Ingresar la ruta del archivo de entrada.";
-                        path <- getLine;
-                        str <- catch ((readFile) path) manejarErrorArchivo;
-                        result <- catch (validarArchivo str) manejarErrorArchivo;
-                        return str
+                        str <- capturarLineaYleer;
+                        result <- catch (validarArchivo str) manejarErrorArchivo2;
+                        return result
                        }
 
+capturarLineaYleer :: IO String
+capturarLineaYleer = do{
+                        path <- getLine;
+                        str <- catch ((readFile) path) manejarErrorArchivo;
+                        return str
+                        }
 
 manejarErrorArchivo :: SomeException -> IO String
 manejarErrorArchivo e = do{
+                           putStrLn ("Archivo de entrada inválido, Excepción: " ++ (show e));
+                           putStrLn "Ingresar la ruta del archivo de entrada.";
+                           capturarLineaYleer
+                          }
+
+manejarErrorArchivo2 :: SomeException -> IO [[String]]
+manejarErrorArchivo2 e = do{
                            putStrLn ("Archivo de entrada inválido, Excepción: " ++ (show e));
                            leerArchivoEntrada
                           }

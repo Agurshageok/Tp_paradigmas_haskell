@@ -7,10 +7,10 @@ import Data.Function
 main :: IO ()
 main = do { 
            str <- leerArchivoEntrada;
-           listoParaArbol <- validarArchivo str;
+           --listoParaArbol <- validarArchivo str;
            esp <- ingresarCantEspacios;
            putStrLn ((show esp) ++ "   espacios");
-           arbol <- transformar listoParaArbol;
+           arbol <- transformar str; --IO [[String]]
            pathSalida <- obtenerRutaSalida;
 
            continuar <- consultarFinDatos;
@@ -31,7 +31,7 @@ valor de cada nodo.
 ------------------------------------------}
 
 {- 
-Revisar que el dash solo aparezca en el ultimo elemento
+Revisar que el dash solo aparezca en el ultimo elemento 
 -}
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
@@ -100,6 +100,7 @@ leerArchivoEntrada = do{
                         putStrLn "Ingresar la ruta del archivo de entrada.";
                         path <- getLine;
                         str <- catch ((readFile) path) manejarErrorArchivo;
+                        result <- catch (validarArchivo str) manejarErrorArchivo;
                         return str
                        }
 
@@ -147,7 +148,9 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 {-----------------------------
 -- Arbol y transformacion ----
 ------------------------------}
-
+{-
+[["1","2","1","A-7"],["1","2","1","B-2"],["1","2","1","C-3"],["1","2","1","2","A-1"],["1","2","1","2","Z-5"],["1","2","1","3-7"],["1","2","2","1-0"],["1","2","2","2-3"],["1","2","5","1-1"],["2","1","1","1","W-5"],["2","1","1","1","Z-3"],["2","1","2","1-4"],["A","1","2","1","C-2"],["A","1","2","1","D-1"],["A","1","2","2","S-1"],["A","1","2","2","T-1"],["A","4","1","1","G-3"],["A","4","1","1","H-3"],["A","4","1","2","M-1"],["A","4","1","2","N-9"],["A","4","3","1-2"]]
+-}
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
 transformar :: [[String]] -> IO (ArbN String)

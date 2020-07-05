@@ -29,6 +29,10 @@ Deja una lista, donde cada elemento es una
 lista de String, donde cada string es el 
 valor de cada nodo.
 ------------------------------------------}
+
+{- 
+Revisar que el dash solo aparezca en el ultimo elemento
+-}
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
@@ -53,6 +57,11 @@ checkLine line = concat (map checkString line)
 
 checkString :: String -> [Bool]
 checkString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
+
+isSorted :: (Ord a) => [a] -> Bool
+isSorted []       = True
+isSorted [x]      = True
+isSorted (x:y:xs) = x < y && isSorted (y:xs)
 
 {-
 -----------------------------------------------------------------------------------

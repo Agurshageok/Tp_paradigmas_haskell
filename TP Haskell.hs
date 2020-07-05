@@ -25,20 +25,21 @@ Comprueba que el archivo de entrada contenga
 solamente caracteres AlphaNum o Dash
 Elimina las comas que separan los marcadores
 de nodos en cada linea.
+Validaciones: 
+        -> Caracteres Solo "1...9" || "a...z" || "A...Z"
+        -> ultimo elemento de cada fila tiene el formato "X-N" donde N es un entero, X es un String y estan separados por 1 dash
+        -> No existen 2 filas iguales. 
 Deja una lista, donde cada elemento es una 
 lista de String, donde cada string es el 
 valor de cada nodo.
 ------------------------------------------}
 
-{- 
-Revisar que el dash solo aparezca en el ultimo elemento 
--}
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
-                        if checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && (checkFilasNoRepetidos $ filasConcat archivo) -- && checkOrder archivo
+                        if checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && checkFilasNoRepetidos archivo -- && checkOrder archivo
                         then return archivo
-                        else error "Error de validacion!" --Cambiar por exception
+                        else error "Error de validacion!"
 
 isOtherPunctuation :: Char -> Bool
 isOtherPunctuation c = (generalCategory c) == OtherPunctuation
@@ -49,17 +50,6 @@ isDashPunctuation c = (generalCategory c) == DashPunctuation
 separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
 
-{-
-checkOrder :: [[String]] -> Bool
-checkOrder archivo = all (==True) (map checkDashLine archivo)
-
-checkOrderLine :: [String] -> Bool
-checkOrderLine line = True
-
-checkOrderString :: String -> Bool
-checkOrderString str = True
--}
-
 checkValueIsInt :: [[String]] -> Bool
 checkValueIsInt archivo = all (==True) (map checkValueIsIntLine archivo)
 
@@ -68,11 +58,6 @@ checkValueIsIntLine line = checkValueIsIntString $ last line
 
 checkValueIsIntString :: String -> Bool
 checkValueIsIntString str = length (words num) >= 1 && (all isDigit num) && (read num ::Int) >= 0 where num = (drop 2 str)
-
---validarCantEspacios comprueba que un string contiene un INT mayor o igual a 0. 
---validarCantEspacios esp = length (words esp) == 1 && (all isDigit esp) && (read esp ::Int) > 0
---Usar de template, pero descartar lenght. Podria venir un int de >9
---(drop 2 "A-13")
 
 checkDash :: [[String]] -> Bool
 checkDash archivo = all (==True) (map checkDashLine archivo)
@@ -101,8 +86,8 @@ filasConcat :: [[String]] -> [String]
 --filasConcat archivo = map (\str -> takeWhile (/= '-') (concat str)) archivo
 filasConcat archivo = map concat archivo
 
-checkFilasNoRepetidos :: [String] -> Bool
-checkFilasNoRepetidos lines = length lines == length (nub lines)
+checkFilasNoRepetidos :: [[String]] -> Bool
+checkFilasNoRepetidos lines = length (filasConcat lines) == length (nub (filasConcat lines))
         --(isSorted $ map head filas) && (checkFilasOrden (map tail filas))
 
 {-
@@ -213,11 +198,6 @@ hijos (Nodo str hs i) = hs
 
 marca :: ArbN a -> a
 marca (Nodo str hs i) = str
-
-{-Si en la cabeza de la fila, esta el nodo de la lista de hijos, el elemento siguiente de lista de filas es hijo.-}
-
---funcionfun :: ArbN String -> [[String]] -> [[String]]
---funcionfun nodo filas = takeWhile (zipWith (==) (map marca (hijos nodo)) (nub (map head filas))) (map tail filas)
 
 cargarHijos :: [String] -> ArbN String -> ArbN String
 cargarHijos [] arb = arb

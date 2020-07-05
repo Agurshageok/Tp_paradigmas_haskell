@@ -126,9 +126,9 @@ consultarFinDatos = do{
 esSNValido :: String -> Bool
 esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 
-------------------------------
+{-----------------------------
 -- Arbol y transformacion ----
-------------------------------
+------------------------------}
 
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 

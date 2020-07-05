@@ -10,7 +10,7 @@ main = do {
            listoParaArbol <- validarArchivo str;
            esp <- ingresarCantEspacios;
            putStrLn ((show esp) ++ "   espacios");
-
+           arbol <- transformar listoParaArbol;
            pathSalida <- obtenerRutaSalida;
 
            continuar <- consultarFinDatos;
@@ -116,6 +116,28 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 
 
 data ArbN a = Nodo a [ArbN a] Int deriving Show
+
+transformar :: [[String]] -> IO (ArbN String)
+transformar (xs:xss) = do
+                        let primerCabezas = nub (map head (xs:xss))
+                        let restoCabezas = map tail (xs:xss) 
+                        --if null xs
+                        --then return (Nodo '$' (primerCabeza:restoCabezas) 0)
+                        --else 
+                        return (cargarHijos primerCabezas (Nodo "$" [] 0))        
+                        
+cargarHijos :: [String] -> ArbN String -> ArbN String
+cargarHijos [] arb = arb
+cargarHijos (x:xs) (Nodo str ys i) =  cargarHijos xs (Nodo str ((Nodo x [] 0):ys) i)
+
+encontrarHijos :: ArbN String -> [[String]] -> [[String]]
+encontrarHijos arb [] = []
+encontrarHijos (Nodo str ys i) (xs:xss) = if str == head xs then (tail xs):(encontrarHijos (Nodo str ys i) xss) else encontrarHijos (Nodo str ys i) xss
+
+transformarHijos :: ArbN String -> [[String]] -> ArbN String
+transformarHijos arb xss = cargarHijos (nub (map head xss)) arb
+
+
 
 --ASUMIENDO QUE ES VALIDO EL ARBOL
 strToArbol :: [Char] -> [Char] -> ArbN Char

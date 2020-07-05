@@ -3,16 +3,14 @@ import Data.Char
 import Data.List
 import Data.Function
 
-
 main :: IO ()
 main = do { 
            str <- leerArchivoEntrada;
            --listoParaArbol <- validarArchivo str;
            esp <- ingresarCantEspacios;
            putStrLn ((show esp) ++ "   espacios");
-           arbol <- transformar str; --IO [[String]]
+           --arbol <- transformar str; --IO [[String]]
            pathSalida <- obtenerRutaSalida;
-
            continuar <- consultarFinDatos;
            if continuar
            then main
@@ -34,6 +32,11 @@ lista de String, donde cada string es el
 valor de cada nodo.
 ------------------------------------------}
 
+
+{- 
+Revisar que el dash solo aparezca en el ultimo elemento 
+-}
+
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
@@ -50,6 +53,7 @@ isDashPunctuation c = (generalCategory c) == DashPunctuation
 separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
 
+
 checkValueIsInt :: [[String]] -> Bool
 checkValueIsInt archivo = all (==True) (map checkValueIsIntLine archivo)
 
@@ -58,6 +62,7 @@ checkValueIsIntLine line = checkValueIsIntString $ last line
 
 checkValueIsIntString :: String -> Bool
 checkValueIsIntString str = length (words num) >= 1 && (all isDigit num) && (read num ::Int) >= 0 where num = (drop 2 str)
+
 
 checkDash :: [[String]] -> Bool
 checkDash archivo = all (==True) (map checkDashLine archivo)
@@ -125,6 +130,7 @@ capturarLineaYleer :: IO String
 capturarLineaYleer = do{
                         path <- getLine;
                         str <- catch ((readFile) path) manejarErrorArchivo;
+                        --result <- catch (validarArchivo str) manejarErrorArchivo;
                         return str
                         }
 
@@ -183,96 +189,84 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 -}
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
+etiqueta :: ArbN a -> a
+etiqueta (Nodo e hs x) = e
+
+existeHijo :: Eq a => a -> ArbN a -> Bool
+existeHijo hijo (Nodo e [] x) = False
+existeHijo hijo (Nodo e (h:hs) x) = hijo == (etiqueta h) || (existeHijo hijo (Nodo e hs x))
+
+agregarHijo :: ArbN a -> ArbN a -> ArbN a
+--Se agrega el 2do arbol a la lista de hijos del 1ro.
+agregarHijo (Nodo e hs x) hijo = Nodo e (hs ++ [hijo]) x
+
+reemplazarHijo :: Eq a => ArbN a -> ArbN a -> ArbN a
+--Se reemplaza el 2do arbol por el hijo del 1ro que tenía la misma etiqueta. Antes debe usarse existeHijo.
+reemplazarHijo (Nodo e hs x) arb = Nodo e (reempHijoL hs arb) x
+
+reempHijoL :: Eq a => [ArbN a] -> ArbN a -> [ArbN a]
+reempHijoL (h:hs) arb = if (etiqueta h) == (etiqueta arb) then arb:hs else h:(reempHijoL hs arb)
+
+getHijo :: Eq a => a -> ArbN a -> ArbN a
+--Devuelve el hijo del árbol que contiene la etiqueta del 1er parámetro. Antes debe usarse existeHijo.
+getHijo n (Nodo e (h:hs) x) = if n == (etiqueta h) then h else getHijo n (Nodo e hs x)
+
+
+
 transformar :: [[String]] -> IO (ArbN String)
-transformar xss = do
-                        let primerCabezas = nub.map head $ xss
-                        let restoCabezas = map tail xss 
-                        let arbolInit = cargarHijos primerCabezas (Nodo "$" [] 0)
-                        --if null xs
-                        --then return (Nodo '$' (primerCabeza:restoCabezas) 0)
-                        --else 
-                        return (arbolInit)
-                        
-hijos :: ArbN a -> [ArbN a]
-hijos (Nodo str hs i) = hs
+transformar xss = return (agregarFilas xss (Nodo "" [] 0))
 
-marca :: ArbN a -> a
-marca (Nodo str hs i) = str
+agregarFilas :: [[String]] -> ArbN String -> ArbN String
+agregarFilas [] arb = arb
+agregarFilas (f:fs) arb = cargarFila f (agregarFilas fs arb)
 
-cargarHijos :: [String] -> ArbN String -> ArbN String
-cargarHijos [] arb = arb
-cargarHijos (x:xs) (Nodo str ys i) = if (length x) == 1
-                                     then cargarHijos xs (Nodo str ((Nodo x [] 0):ys) i)
-                                     else (Nodo (head x:[]) [] (digitToInt (x!!2)))
-
-encontrarHijos :: ArbN String -> [[String]] -> [[String]]
-encontrarHijos arb [] = []
-encontrarHijos (Nodo str ys i) (xs:xss) = if str == head xs then (tail xs):(encontrarHijos (Nodo str ys i) xss) else encontrarHijos (Nodo str ys i) xss
-
-transformarHijos :: ArbN String -> [[String]] -> ArbN String
-transformarHijos arb xss = cargarHijos (nub (map head xss)) arb
-
-------------------------------
--- /Arbol y transformacion ---
-------------------------------
+cargarFila :: [String] -> ArbN String -> ArbN String
+cargarFila (n:ns) arb = if elem '-' n then agregarHijo arb (Nodo (takeWhile (/= '-') n) [] (read (tail(dropWhile (/= '-') n)) :: Int)) 
+                                      else if existeHijo n arb then reemplazarHijo arb (cargarFila ns (getHijo n arb))
+                                                               else agregarHijo arb (cargarFila ns (Nodo n [] 0))
 
 
---ASUMIENDO QUE ES VALIDO EL ARBOL
-strToArbol :: [Char] -> [Char] -> ArbN Char
-strToArbol (x:(z:(w:[]))) ys = if z == '-' then (Nodo x [] (digitToInt w)) else error "Error en string de entrada"
-strToArbol (x:(z:xs)) ys = if x == ',' then strToArbol xs ys --[',','2']
-                                else 
-                                     if z /= '-' then (Nodo x ([(strToArbol (z:xs) (x:ys))]) 0) -- ['1','2',..]
-                                     else Nodo x [compararRamas (tail xs) (reverse(head xs:ys))] (digitToInt (head xs))
 
-
-compararRamas :: [Char] -> [Char] -> ArbN Char 
-compararRamas (x:xs) (y:ys) = if x == ',' then 
-                                        if head xs == y then compararRamas xs ys else strToArbol (x:xs) (y:ys) 
-                                else 
-                                        if x == y then compararRamas xs ys else strToArbol (x:xs) (y:ys)
-                                        
---strToArbol ['1','2','1','A','-','3','1','2','1','2','A','-','2'] []
 
 obtenerTotalNodo :: ArbN a -> Int
 obtenerTotalNodo (Nodo e hs x) = if null hs then x else sum(map obtenerTotalNodo hs)
 
 
-generarArchivoSalida :: Show a => String -> Int -> ArbN a -> IO ()
+generarArchivoSalida :: String -> Int -> ArbN String -> IO ()
 generarArchivoSalida ruta esp arb = writeFile ruta (arbToString esp 0 arb (esp + longMaxima arb esp) (longMayorTotal arb))
 
 
-arbToString :: Show a => Int -> Int -> ArbN a -> Int -> Int -> String
+arbToString :: Int -> Int -> ArbN String -> Int -> Int -> String
 
 arbToString esp baseEsp (Nodo e hs x) longMax mayorTotal = if null hs
 
-                                                           then (show e) ++ 
-                                                                (concat(replicate (longMax - baseEsp - (length (show e))) " ")) ++ 
+                                                           then e ++ 
+                                                                (concat(replicate (longMax - baseEsp - (length e)) " ")) ++ 
                                                                 "Valor: " ++ 
                                                                 concat(replicate (mayorTotal - (length (show x))) " ") ++ 
                                                                 (show x)
 
-                                                           else (show e) ++ 
+                                                           else e ++ 
                                                                 (arbToStringL esp baseEsp hs longMax mayorTotal) ++ 
                                                                 "\n" ++ 
                                                                 concat(replicate baseEsp " ") ++ 
-                                                                "Total " ++ (show e) ++ ":" ++ 
-                                                                (concat(replicate (longMax - baseEsp - (length (show e))) " ")) ++ 
+                                                                "Total " ++ e ++ ":" ++ 
+                                                                (concat(replicate (longMax - baseEsp - (length e)) " ")) ++ 
                                                                 concat(replicate (mayorTotal - (length (show (obtenerTotalNodo(Nodo e hs x))))) " ") ++ 
                                                                 show (obtenerTotalNodo(Nodo e hs x))
 
 
-arbToStringL :: Show a => Int -> Int -> [ArbN a] -> Int -> Int -> String
+arbToStringL :: Int -> Int -> [ArbN String] -> Int -> Int -> String
 
 arbToStringL esp baseEsp [] longMax mayorTotal = ""
 arbToStringL esp baseEsp (h:hs) longMax mayorTotal = "\n" ++ concat(replicate (baseEsp + esp) " ") ++ (arbToString esp (esp + baseEsp) h longMax mayorTotal) ++ (arbToStringL esp baseEsp hs longMax mayorTotal)
 
 
-longMaxima :: Show a => ArbN a -> Int -> Int
+longMaxima :: ArbN String -> Int -> Int
 --Devuelve la máxima longitud en caracteres de un renglón del árbol.
 
-longMaxima (Nodo e [] x) esp = 7 + length (show e)    -- Se suma 7 debido a la long de "Total: "
-longMaxima (Nodo e (h:hs) x) esp = length (show e) + esp + maximum (map (\arb -> longMaxima arb esp) (h:hs))
+longMaxima (Nodo e [] x) esp = 7 + length e    -- Se suma 7 debido a la long de "Total: "
+longMaxima (Nodo e (h:hs) x) esp = length e + esp + maximum (map (\arb -> longMaxima arb esp) (h:hs))
 
 
 longMayorTotal :: ArbN a -> Int

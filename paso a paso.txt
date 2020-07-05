@@ -55,3 +55,19 @@ isSorted :: (Ord a) => [a] -> Bool
 isSorted []       = True
 isSorted [x]      = True
 isSorted (x:y:xs) = x < y && isSorted (y:xs)
+
+map func [[]] = "121A","121B"....
+
+archivo = isSorted $ 
+                    map (\str -> takeWhile (/= '-') (concat str)) archivo
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ esto devuelve el  ["121A","121B","121C","1212A","1212Z","1213","1221","1222","1251","2111W","2111Z","2121","A121C","A121D","A122S","A122T","A411G","A411H","A412M","A412N","A431"]
+
+                   $ Agarrar [filasConcatenadas] y transformar en [ValorDeLaFila]
+                    map (\x -> (map ord x)) [filasConcatenadas] => [[ValorDeCadaNodo]]
+                    map (sum) [[ValorDeCadaNodo]] => [ValorDeLaFila]
+
+"121A","121B","121C","1212A","1212Z","1213","1221","1222","1251","2111W","2111Z","2121","A121C","A121D","A122S","A122T","A411G","A411H","A412M","A412N","A431"]
+[213,   214,    215,    263,    288,    199,   198,   199,   201,    284,    287,   198,    280,    281,    297,    298,    286,    287,    293,    294,   217]
+
+sacar las cabezas de cada palabra -> eliminar duplicados -> en orden?
+map head [filasConcatenadas] . nub . isSorted && loMismo map tail [filasConcatenadas]

@@ -11,7 +11,6 @@ main = do {
            putStrLn ((show esp) ++ "   espacios");
            --arbol <- transformar str; --IO [[String]]
            pathSalida <- obtenerRutaSalida;
-
            continuar <- consultarFinDatos;
            if continuar
            then main
@@ -24,18 +23,24 @@ Comprueba que el archivo de entrada contenga
 solamente caracteres AlphaNum o Dash
 Elimina las comas que separan los marcadores
 de nodos en cada linea.
+Validaciones: 
+        -> Caracteres Solo "1...9" || "a...z" || "A...Z"
+        -> ultimo elemento de cada fila tiene el formato "X-N" donde N es un entero, X es un String y estan separados por 1 dash
+        -> No existen 2 filas iguales. 
 Deja una lista, donde cada elemento es una 
 lista de String, donde cada string es el 
 valor de cada nodo.
 ------------------------------------------}
 
+
 {- 
 Revisar que el dash solo aparezca en el ultimo elemento 
 -}
+
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
-                        if check archivo && checkDash archivo
+                        if checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && checkFilasNoRepetidos archivo -- && checkOrder archivo
                         then return archivo
                         else error "Error de validacion!"
 
@@ -48,6 +53,17 @@ isDashPunctuation c = (generalCategory c) == DashPunctuation
 separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
 
+
+checkValueIsInt :: [[String]] -> Bool
+checkValueIsInt archivo = all (==True) (map checkValueIsIntLine archivo)
+
+checkValueIsIntLine :: [String] -> Bool
+checkValueIsIntLine line = checkValueIsIntString $ last line
+
+checkValueIsIntString :: String -> Bool
+checkValueIsIntString str = length (words num) >= 1 && (all isDigit num) && (read num ::Int) >= 0 where num = (drop 2 str)
+
+
 checkDash :: [[String]] -> Bool
 checkDash archivo = all (==True) (map checkDashLine archivo)
 
@@ -57,19 +73,27 @@ checkDashLine line =  checkDashString $ last line
 checkDashString :: String -> Bool
 checkDashString str = isDashPunctuation $ str !! 1
 
-check :: [[String]] -> Bool
-check archivo = all (==True) (concat (map checkLine archivo))
+checkCharacters :: [[String]] -> Bool
+checkCharacters archivo = all (==True) (concat (map checkCharactersLine archivo))
 
-checkLine :: [String] -> [Bool]
-checkLine line = concat (map checkString line)
+checkCharactersLine :: [String] -> [Bool]
+checkCharactersLine line = concat (map checkCharactersString line)
 
-checkString :: String -> [Bool]
-checkString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
+checkCharactersString :: String -> [Bool]
+checkCharactersString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
 
 isSorted :: (Ord a) => [a] -> Bool
 isSorted []       = True
 isSorted [x]      = True
-isSorted (x:y:xs) = x < y && isSorted (y:xs)
+isSorted (x:y:xs) = x <= y && isSorted (y:xs)
+
+filasConcat :: [[String]] -> [String]
+--filasConcat archivo = map (\str -> takeWhile (/= '-') (concat str)) archivo
+filasConcat archivo = map concat archivo
+
+checkFilasNoRepetidos :: [[String]] -> Bool
+checkFilasNoRepetidos lines = length (filasConcat lines) == length (nub (filasConcat lines))
+        --(isSorted $ map head filas) && (checkFilasOrden (map tail filas))
 
 {-
 -----------------------------------------------------------------------------------
@@ -94,18 +118,31 @@ manejarRutaInvalida e = do{
                           }
 
 
-leerArchivoEntrada :: IO String
+leerArchivoEntrada :: IO [[String]]
 leerArchivoEntrada = do{
                         putStrLn "Ingresar la ruta del archivo de entrada.";
+                        str <- capturarLineaYleer;
+                        result <- catch (validarArchivo str) manejarErrorArchivo2;
+                        return result
+                       }
+
+capturarLineaYleer :: IO String
+capturarLineaYleer = do{
                         path <- getLine;
                         str <- catch ((readFile) path) manejarErrorArchivo;
                         --result <- catch (validarArchivo str) manejarErrorArchivo;
                         return str
-                       }
-
+                        }
 
 manejarErrorArchivo :: SomeException -> IO String
 manejarErrorArchivo e = do{
+                           putStrLn ("Archivo de entrada inválido, Excepción: " ++ (show e));
+                           putStrLn "Ingresar la ruta del archivo de entrada.";
+                           capturarLineaYleer
+                          }
+
+manejarErrorArchivo2 :: SomeException -> IO [[String]]
+manejarErrorArchivo2 e = do{
                            putStrLn ("Archivo de entrada inválido, Excepción: " ++ (show e));
                            leerArchivoEntrada
                           }
@@ -150,7 +187,6 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 {-
 [["1","2","1","A-7"],["1","2","1","B-2"],["1","2","1","C-3"],["1","2","1","2","A-1"],["1","2","1","2","Z-5"],["1","2","1","3-7"],["1","2","2","1-0"],["1","2","2","2-3"],["1","2","5","1-1"],["2","1","1","1","W-5"],["2","1","1","1","Z-3"],["2","1","2","1-4"],["A","1","2","1","C-2"],["A","1","2","1","D-1"],["A","1","2","2","S-1"],["A","1","2","2","T-1"],["A","4","1","1","G-3"],["A","4","1","1","H-3"],["A","4","1","2","M-1"],["A","4","1","2","N-9"],["A","4","3","1-2"]]
 -}
-
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
 etiqueta :: ArbN a -> a
@@ -188,6 +224,7 @@ cargarFila :: [String] -> ArbN String -> ArbN String
 cargarFila (n:ns) arb = if elem '-' n then agregarHijo arb (Nodo (takeWhile (/= '-') n) [] (read (tail(dropWhile (/= '-') n)) :: Int)) 
                                       else if existeHijo n arb then reemplazarHijo arb (cargarFila ns (getHijo n arb))
                                                                else agregarHijo arb (cargarFila ns (Nodo n [] 0))
+
 
 
 

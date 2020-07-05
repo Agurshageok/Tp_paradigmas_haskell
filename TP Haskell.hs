@@ -19,17 +19,22 @@ main = do {
            else putStrLn "Fin del procesamiento."
            }
 
-
+{-----------------------------------------
+Validacion del Archivo de entrada
+Comprueba que el archivo de entrada contenga
+solamente caracteres AlphaNum o Dash
+Elimina las comas que separan los marcadores
+de nodos en cada linea.
+Deja una lista, donde cada elemento es una 
+lista de String, donde cada string es el 
+valor de cada nodo.
+------------------------------------------}
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
                         if check archivo
                         then return archivo
                         else error "Error de validacion!"
-
-validarLinea :: String -> Bool
-validarLinea [] = True
-validarLinea (c:cs) = if isAlphaNum c then validarLinea cs else False
 
 isOtherPunctuation :: Char -> Bool
 isOtherPunctuation c = (generalCategory c) == OtherPunctuation
@@ -49,6 +54,13 @@ checkLine line = concat (map checkString line)
 checkString :: String -> [Bool]
 checkString str =  zipWith (||) (map isDashPunctuation str) (map isAlphaNum str)
 
+{-
+-----------------------------------------------------------------------------------
+Manejo de IO.
+Validaciones pertinentes para evitar errores de input humano.
+Manejo de "repeat", mas de un procesamiento por ejecucion. 
+-----------------------------------------------------------------------------------
+-}
 
 obtenerRutaSalida :: IO String
 obtenerRutaSalida = do{
@@ -114,6 +126,9 @@ consultarFinDatos = do{
 esSNValido :: String -> Bool
 esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 
+------------------------------
+-- Arbol y transformacion ----
+------------------------------
 
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
@@ -137,6 +152,9 @@ encontrarHijos (Nodo str ys i) (xs:xss) = if str == head xs then (tail xs):(enco
 transformarHijos :: ArbN String -> [[String]] -> ArbN String
 transformarHijos arb xss = cargarHijos (nub (map head xss)) arb
 
+------------------------------
+-- /Arbol y transformacion ---
+------------------------------
 
 
 --ASUMIENDO QUE ES VALIDO EL ARBOL

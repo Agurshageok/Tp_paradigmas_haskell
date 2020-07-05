@@ -36,7 +36,7 @@ Revisar que el dash solo aparezca en el ultimo elemento
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
-                        if check archivo
+                        if check archivo && checkDash archivo
                         then return archivo
                         else error "Error de validacion!"
 
@@ -48,6 +48,15 @@ isDashPunctuation c = (generalCategory c) == DashPunctuation
 
 separarEnNodos :: String -> [String]
 separarEnNodos str = filter (not . any isOtherPunctuation) . groupBy ((==) `on` isOtherPunctuation) $ str
+
+checkDash :: [[String]] -> Bool
+checkDash archivo = all (==True) (map checkDashLine archivo)
+
+checkDashLine :: [String] -> Bool
+checkDashLine line =  checkDashString $ last line
+
+checkDashString :: String -> Bool
+checkDashString str = isDashPunctuation $ str !! 1
 
 check :: [[String]] -> Bool
 check archivo = all (==True) (concat (map checkLine archivo))
@@ -142,17 +151,31 @@ esSNValido str = str == "S" || str == "N" || str == "s" || str == "n"
 data ArbN a = Nodo a [ArbN a] Int deriving Show
 
 transformar :: [[String]] -> IO (ArbN String)
-transformar (xs:xss) = do
-                        let primerCabezas = nub (map head (xs:xss))
-                        let restoCabezas = map tail (xs:xss) 
+transformar xss = do
+                        let primerCabezas = nub.map head $ xss
+                        let restoCabezas = map tail xss 
+                        let arbolInit = cargarHijos primerCabezas (Nodo "$" [] 0)
                         --if null xs
                         --then return (Nodo '$' (primerCabeza:restoCabezas) 0)
                         --else 
-                        return (cargarHijos primerCabezas (Nodo "$" [] 0))        
+                        return (arbolInit)
                         
+hijos :: ArbN a -> [ArbN a]
+hijos (Nodo str hs i) = hs
+
+marca :: ArbN a -> a
+marca (Nodo str hs i) = str
+
+{-Si en la cabeza de la fila, esta el nodo de la lista de hijos, el elemento siguiente de lista de filas es hijo.-}
+
+--funcionfun :: ArbN String -> [[String]] -> [[String]]
+--funcionfun nodo filas = takeWhile (zipWith (==) (map marca (hijos nodo)) (nub (map head filas))) (map tail filas)
+
 cargarHijos :: [String] -> ArbN String -> ArbN String
 cargarHijos [] arb = arb
-cargarHijos (x:xs) (Nodo str ys i) =  cargarHijos xs (Nodo str ((Nodo x [] 0):ys) i)
+cargarHijos (x:xs) (Nodo str ys i) = if (length x) == 1
+                                     then cargarHijos xs (Nodo str ((Nodo x [] 0):ys) i)
+                                     else (Nodo (head x:[]) [] (digitToInt (x!!2)))
 
 encontrarHijos :: ArbN String -> [[String]] -> [[String]]
 encontrarHijos arb [] = []

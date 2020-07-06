@@ -9,6 +9,7 @@ main = do {
            esp <- ingresarCantEspacios;
            -- putStrLn ((show esp) ++ "   espacios");
            arbol <- transformar str; --IO [[String]]
+           validarOrden arbol;
            pathSalida <- obtenerRutaSalida;
            generarArchivoSalida pathSalida esp arbol;
            continuar <- consultarFinDatos;
@@ -27,22 +28,21 @@ Validaciones:
         -> Caracteres Solo "1...9" || "a...z" || "A...Z"
         -> ultimo elemento de cada fila tiene el formato "X-N" donde N es un entero, X es un String y estan separados por 1 dash
         -> No existen 2 filas iguales. 
+        -> 
 Deja una lista, donde cada elemento es una 
 lista de String, donde cada string es el 
 valor de cada nodo.
 ------------------------------------------}
 
-
-{- 
-Revisar que el dash solo aparezca en el ultimo elemento 
--}
-
 validarArchivo :: String -> IO ([[String]]) 
 validarArchivo str = do
                         let archivo = map separarEnNodos (lines str)
-                        if checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && checkFilasNoRepetidos archivo -- && checkOrder archivo
+                        if check archivo
                         then return archivo
                         else error "Error de validacion!"
+
+check :: [[String]] -> Bool
+check archivo = checkCharacters archivo && checkDash archivo && checkValueIsInt archivo && checkFilasNoRepetidos archivo -- && checkOrder archivo
 
 isOtherPunctuation :: Char -> Bool
 isOtherPunctuation c = (generalCategory c) == OtherPunctuation
@@ -95,6 +95,15 @@ checkFilasNoRepetidos :: [[String]] -> Bool
 checkFilasNoRepetidos lines = length (filasConcat lines) == length (nub (filasConcat lines))
         --(isSorted $ map head filas) && (checkFilasOrden (map tail filas))
 
+validarOrden ::  ArbN String -> IO ()
+validarOrden arb = do
+                   if okArbol arb
+                   then putStrLn "Orden Lexicografico ok"
+                   else putStrLn "Error en Orden Lexicografico"
+
+okArbol :: ArbN String -> Bool
+okArbol arb = isSorted (map etiqueta (hijos arb))
+
 {-
 -----------------------------------------------------------------------------------
 Manejo de IO.
@@ -130,7 +139,6 @@ capturarLineaYleer :: IO String
 capturarLineaYleer = do{
                         path <- getLine;
                         str <- catch ((readFile) path) manejarErrorArchivo;
-                        --result <- catch (validarArchivo str) manejarErrorArchivo;
                         return str
                         }
 
@@ -191,6 +199,10 @@ data ArbN a = Nodo a [ArbN a] Int deriving Show
 
 etiqueta :: ArbN a -> a
 etiqueta (Nodo e hs x) = e
+
+hijos :: ArbN a -> [ArbN a]
+hijos (Nodo e hs x) = hs
+
 
 existeHijo :: Eq a => a -> ArbN a -> Bool
 existeHijo hijo (Nodo e [] x) = False

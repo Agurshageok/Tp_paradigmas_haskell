@@ -102,7 +102,10 @@ validarOrden arb = do
                    else putStrLn "Error en Orden Lexicografico"
 
 okArbol :: ArbN String -> Bool
-okArbol arb = isSorted (map etiqueta (hijos arb))
+okArbol arb = isSorted (map etiqueta (hijos arb)) && (all (==True) (okArbol2 (hijos arb)))
+
+okArbol2 :: [ArbN String] -> [Bool]
+okArbol2 (h:hs) = (okArbol h):(okArbol2 hs)
 
 {-
 -----------------------------------------------------------------------------------

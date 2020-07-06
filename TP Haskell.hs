@@ -6,11 +6,11 @@ import Data.Function
 main :: IO ()
 main = do { 
            str <- leerArchivoEntrada;
-           --listoParaArbol <- validarArchivo str;
            esp <- ingresarCantEspacios;
-           putStrLn ((show esp) ++ "   espacios");
-           --arbol <- transformar str; --IO [[String]]
+           -- putStrLn ((show esp) ++ "   espacios");
+           arbol <- transformar str; --IO [[String]]
            pathSalida <- obtenerRutaSalida;
+           generarArchivoSalida pathSalida esp arbol;
            continuar <- consultarFinDatos;
            if continuar
            then main
@@ -198,7 +198,7 @@ existeHijo hijo (Nodo e (h:hs) x) = hijo == (etiqueta h) || (existeHijo hijo (No
 
 agregarHijo :: ArbN a -> ArbN a -> ArbN a
 --Se agrega el 2do arbol a la lista de hijos del 1ro.
-agregarHijo (Nodo e hs x) hijo = Nodo e (hs ++ [hijo]) x
+agregarHijo (Nodo e hs x) hijo = Nodo e (hijo:hs) x
 
 reemplazarHijo :: Eq a => ArbN a -> ArbN a -> ArbN a
 --Se reemplaza el 2do arbol por el hijo del 1ro que tenía la misma etiqueta. Antes debe usarse existeHijo.
@@ -233,7 +233,9 @@ obtenerTotalNodo (Nodo e hs x) = if null hs then x else sum(map obtenerTotalNodo
 
 
 generarArchivoSalida :: String -> Int -> ArbN String -> IO ()
-generarArchivoSalida ruta esp arb = writeFile ruta (arbToString esp 0 arb (esp + longMaxima arb esp) (longMayorTotal arb))
+generarArchivoSalida ruta esp arb =do
+        writeFile ruta (arbToString esp 0 arb (esp + longMaxima arb esp) (longMayorTotal arb));
+        putStrLn "Archivo Procesado con exito!"
 
 
 arbToString :: Int -> Int -> ArbN String -> Int -> Int -> String
